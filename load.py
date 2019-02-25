@@ -1,36 +1,24 @@
 # -*- coding: utf-8 -*-
 import sys
+import os
+import json
 
 from keras import optimizers,regularizers
 from keras.models import Model,model_from_json
 from keras.preprocessing.sequence import pad_sequences
 import pickle
 
+from flask import Flask
+from flask import request
+from flask import abort, redirect, url_for
+from flask import jsonify
+from flask_cors import CORS
 
-def get_concat_vectors(model1,model2, corpus, size):
-    vecs = np.zeros((len(corpus), size))
-    n = 0
-    for i in corpus.index:
-        prefix = 'all_' + str(i)
-        vecs[n] = np.append(model1.docvecs[prefix],model2.docvecs[prefix])
-        n += 1
-    return vecs
+app = Flask(__name__)
+CORS(app)
 
-# create concatenated vectors with unigram DBOW of 200 dimensions for each word in the vocabularies
-def get_w2v_ugdbowdmm(comment, size, model_ug_dbow, model_ug_dmm):
-    vec = np.zeros(size).reshape((1, size))
-    count = 0.
-    for word in comment.split():
-        try:
-            vec += np.append(model_ug_dbow[word],model_ug_dmm[word]).reshape((1, size))
-            count += 1.
-        except KeyError:
-            continue
-    if count != 0:
-        vec /= count
-    return vec
-
-def main():
+@app.route('/')
+def index():
     # config
     optimizer=optimizers.Adam(lr=0.0005)
     MAX_SEQUENCE_LENGTH=64
@@ -59,6 +47,27 @@ def main():
 
         print(yhat_cnn)
 
+        return jsonify(yhat_cnn.tolist()) 
 
-if __name__ == "__main__":
-    main()
+def get_concat_vectors(model1,model2, corpus, size):
+    vecs = np.zeros((len(corpus), size))
+    n = 0
+    for i in corpus.index:
+        prefix = 'all_' + str(i)
+        vecs[n] = np.append(model1.docvecs[prefix],model2.docvecs[prefix])
+        n += 1
+    return vecs
+
+# create concatenated vectors with unigram DBOW of 200 dimensions for each word in the vocabularies
+def get_w2v_ugdbowdmm(comment, size, model_ug_dbow, model_ug_dmm):
+    vec = np.zeros(size).reshape((1, size))
+    count = 0.
+    for word in comment.split():
+        try:
+            vec += np.append(model_ug_dbow[word],model_ug_dmm[word]).reshape((1, size))
+            count += 1.
+        except KeyError:
+            continue
+    if count != 0:
+        vec /= count
+    return vec    
