@@ -1,38 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys
-import codecs
-from tqdm import tqdm
-tqdm.pandas(desc="progress-bar")
-from gensim.models import Doc2Vec
-from gensim.models.doc2vec import LabeledSentence
-from gensim.models.phrases import Phrases
-from gensim.models.phrases import Phraser
-from gensim.models import KeyedVectors
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-import multiprocessing
-import pandas as pd
-import numpy as np
-# np.set_printoptions(threshold=np.inf)
-import tensorflow as tf
-from sklearn import utils
-from sklearn.preprocessing import scale
-from keras.layers import Embedding,Conv1D,CuDNNLSTM,Input,GlobalMaxPooling1D,MaxPooling1D,Activation,LSTM,Bidirectional,TimeDistributed,BatchNormalization
+
 from keras import optimizers,regularizers
 from keras.models import Model,model_from_json
-from keras.optimizers import RMSprop
-from keras.callbacks import ModelCheckpoint,ReduceLROnPlateau,EarlyStopping
-seed = 7
+from keras.preprocessing.sequence import pad_sequences
 import pickle
 
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.layers import Flatten
-from keras.layers.embeddings import Embedding
-from keras.preprocessing import sequence
-from keras.callbacks import ModelCheckpoint, EarlyStopping
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
 
 def get_concat_vectors(model1,model2, corpus, size):
     vecs = np.zeros((len(corpus), size))
@@ -64,19 +37,19 @@ def main():
     loss= "categorical_crossentropy"
 
     # load json and create model
-    json_file = open('model.json', 'r')
+    json_file = open('model/model.json', 'r')
     loaded_model_json = json_file.read()
     json_file.close()
     loaded_model = model_from_json(loaded_model_json)
     # load weights into new model
-    loaded_model.load_weights("LSTMCNN_ALL_best_weights.hdf5")
+    loaded_model.load_weights("model/LSTMCNN_ALL_best_weights.hdf5")
     print("Loaded model from disk")
 
     # evaluate loaded model on test data
     loaded_model.compile(optimizer=optimizer, loss=loss,metrics=['accuracy'])
 
     # loading
-    with open('tokenizer.pickle', 'rb') as handle:
+    with open('model/tokenizer.pickle', 'rb') as handle:
         tokenizer = pickle.load(handle)
 
         sequences_test = tokenizer.texts_to_sequences(["toi yeu samsung"])
