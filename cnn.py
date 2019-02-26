@@ -74,17 +74,21 @@ def main():
     y_validation_and_test=tf.keras.utils.to_categorical(np.asarray(y_validation_and_test))
 
     print("Loading the model...")
-    model_ug_cbow = KeyedVectors.load('w2v_model_ug_cbow.word2vec')
-    model_ug_sg = KeyedVectors.load('w2v_model_ug_sg.word2vec')
+    model_ug_cbow = KeyedVectors.load('model/w2v_model_ug_cbow.word2vec')
+    model_ug_sg = KeyedVectors.load('model/w2v_model_ug_sg.word2vec')
     
     print("Tokenizing the model...")
+
     # a number of vocabularies you want to use
-    tokenizer = Tokenizer(num_words=20000)
+    tokenizer = Tokenizer(num_words=20000, filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~1234567890',
+                                   lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
     tokenizer.fit_on_texts(x_train)
 
     # saving tokenizer
     with open('tokenizer.pickle', 'wb') as handle:
         pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print(x_train[:5])
 
     sequences = tokenizer.texts_to_sequences(x_train)
 
@@ -102,8 +106,8 @@ def main():
     # print(sequences[:5])
 
     length = []
-    # for x in x_train:
-    #     length.append(len(x.split()))
+    for x in x_train:
+        length.append(len(x.split()))
 
     Sumlength=0
     for x in sequences:
@@ -113,22 +117,22 @@ def main():
     AvarageLength=round(Sumlength/len(x_train))
 
     print("-----------------------")
+    print("REAL MAX_SEQUENCE_LENGTH {0}".format(max(length)))
     print(Sumlength)
-    print(Sumlength/len(x_train))
+    print(len(x_train))
     print(AvarageLength)
     print("-----------------------")
 
     # base on AvarageLength to define MAX_SEQUENCE_LENGTH
     MAX_SEQUENCE_LENGTH=64
-    if(MAX_SEQUENCE_LENGTH>128):
+    if((max(length)>128)):
         MAX_SEQUENCE_LENGTH=128
-    if(MAX_SEQUENCE_LENGTH<64):
+    if((max(length)<64)):
         MAX_SEQUENCE_LENGTH=64
 
     print("Padding the model with max length is {0}...".format(MAX_SEQUENCE_LENGTH))
 
     x_train_seq = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
-    # print(x_train_seq[:5])
 
     sequences_val = tokenizer.texts_to_sequences(x_validation_and_test)
     x_val_seq = pad_sequences(sequences_val, maxlen=MAX_SEQUENCE_LENGTH)
@@ -144,12 +148,12 @@ def main():
             embedding_matrix[i] = embedding_vector
 
     # word at 2221 is 'core'
-    print("Checking the word at matrix 2221 is core")
-    print(np.array_equal(embedding_matrix[2221] ,embeddings_index.get('core')))
+    print("Checking the word at matrix 2192 is core")
+    print(np.array_equal(embedding_matrix[2192] ,embeddings_index.get('core')))
 
     embedding_size=200
     fully_connected_layers= [1000,1000]
-    conv_layers=[500,3, 1]
+    conv_layers=[500,3,1]
     dropout_p= 0.1
     optimizer=optimizers.Adam(lr=0.0005)
     loss= "categorical_crossentropy"
@@ -202,7 +206,6 @@ def main():
     # serialize weights to HDF5
     model.fit(x_train_seq, y_train, batch_size=16, epochs=1,
                         validation_data=(x_val_seq, y_validation_and_test), callbacks = [reduce_lr,checkpoint,earlystopper])
-
 
     # load json and create model
     json_file = open('model.json', 'r')
