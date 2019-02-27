@@ -6,6 +6,7 @@ import json
 from keras import optimizers,regularizers
 from keras.models import Model,model_from_json
 from keras.preprocessing.sequence import pad_sequences
+from keras import backend as K
 import pickle
 
 from flask import Flask
@@ -19,35 +20,52 @@ CORS(app)
 
 @app.route('/')
 def index():
-    # config
-    optimizer=optimizers.Adam(lr=0.0005)
-    MAX_SEQUENCE_LENGTH=64
-    loss= "categorical_crossentropy"
+    return 'Index Page'
 
-    # load json and create model
-    json_file = open('model/model.json', 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    loaded_model = model_from_json(loaded_model_json)
-    # load weights into new model
-    loaded_model.load_weights("model/LSTMCNN_ALL_best_weights.hdf5")
-    print("Loaded model from disk")
+@app.route('/analyze-text', methods=['GET', 'POST'])
+def analyzeIndex():
+    K.clear_session()
 
-    # evaluate loaded model on test data
-    loaded_model.compile(optimizer=optimizer, loss=loss,metrics=['accuracy'])
+    # { "q": "a" }
 
-    # loading
-    with open('model/tokenizer.pickle', 'rb') as handle:
-        tokenizer = pickle.load(handle)
+    if(request.method == 'POST'):
+        # get params
+        q = request.get_json().get("q")
 
-        sequences_test = tokenizer.texts_to_sequences(["toi yeu samsung"])
-        x_test_seq = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
+        print("Params: " + q)
 
-        yhat_cnn = loaded_model.predict(x_test_seq)
+        # config
+        optimizer=optimizers.Adam(lr=0.0005)
+        MAX_SEQUENCE_LENGTH=128
+        loss= "categorical_crossentropy"
 
-        print(yhat_cnn)
+        # load json and create model
+        json_file = open('model/model.json', 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        loaded_model = model_from_json(loaded_model_json)
+        # load weights into new model
+        loaded_model.load_weights("model/LSTMCNN_ALL_best_weights.hdf5")
+        print("Loaded model from disk")
 
-        return jsonify(yhat_cnn.tolist()) 
+        # evaluate loaded model on test data
+        loaded_model.compile(optimizer=optimizer, loss=loss,metrics=['accuracy'])
+
+        # loading
+        with open('model/tokenizer.pickle', 'rb') as handle:
+            tokenizer = pickle.load(handle)
+
+            sequences_test = tokenizer.texts_to_sequences([q])
+            x_test_seq = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
+
+            yhat_cnn = loaded_model.predict(x_test_seq)
+
+            print(yhat_cnn)
+
+            return jsonify(yhat_cnn.tolist())
+    else:
+        abort(400)
+        return 'ONLY ACCPET POST REQUEST'
 
 def get_concat_vectors(model1,model2, corpus, size):
     vecs = np.zeros((len(corpus), size))
