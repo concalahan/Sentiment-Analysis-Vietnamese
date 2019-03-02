@@ -4,9 +4,6 @@ import codecs
 from tqdm import tqdm
 tqdm.pandas(desc="progress-bar")
 from gensim.models import Doc2Vec
-from gensim.models.doc2vec import LabeledSentence
-from gensim.models.phrases import Phrases
-from gensim.models.phrases import Phraser
 from gensim.models import KeyedVectors
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression

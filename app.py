@@ -9,6 +9,8 @@ from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
 import pickle
 
+import numpy as np
+
 from flask import Flask
 from flask import request
 from flask import abort, redirect, url_for
@@ -32,7 +34,7 @@ def analyzeIndex():
         # get params
         q = request.get_json().get("q")
 
-        split_sentence_to_array(q)
+        attributes = split_sentence_to_array(q)
 
         # config
         optimizer=optimizers.Adam(lr=0.0005)
@@ -61,7 +63,12 @@ def analyzeIndex():
 
             yhat_cnn = loaded_model.predict(x_test_seq)
 
-            return jsonify(yhat_cnn.tolist())
+            sentimentResult = get_sentiment(yhat_cnn)
+
+            sentiment = {}
+            sentiment[sentimentResult[0]] = sentimentResult[1]
+
+            return jsonify(attributes = attributes, sentiment = sentiment)
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'
@@ -83,5 +90,30 @@ def split_sentence_to_array(sentence):
             if(len(temps) != 0):
                 results.append({key: temps})
 
-    print(results)
     return results
+
+def get_sentiment(modelResult):
+    # modelResult is numpy narray
+
+    # Get the max float in the narray -> what AI classify the sentiment
+    maxElement = np.amax(modelResult)
+
+    # Get the indices of maximum element in numpy array
+    maxIndex = np.where(modelResult[0] == np.amax(modelResult[0]))
+
+    sentiment = "positive"
+
+    if(maxIndex == 0):
+        # negative
+        sentiment = "negative"
+    elif(maxIndex == 1):
+        # neutral
+        sentiment = "neutral"
+
+    if(maxElement > 0.6):
+        # if AI result is greater than 0.6, then take the result
+        return (sentiment, maxElement)
+    else:
+        # else make it as NEUTRAL
+        return ("NEUTRAL", 0.5)
+    
