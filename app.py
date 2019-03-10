@@ -2,14 +2,13 @@
 import sys
 import os
 import json
+import pickle
+import numpy as np
 
 from keras import optimizers,regularizers
 from keras.models import Model,model_from_json
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
-import pickle
-
-import numpy as np
 
 from flask import Flask
 from flask import request
@@ -33,7 +32,7 @@ def analyzeIndex():
     if(request.method == 'POST'):
         # get params
         q = request.get_json().get("q")
-
+        
         attributes = split_sentence_to_array(q)
 
         # config
@@ -68,7 +67,8 @@ def analyzeIndex():
             sentiment = {}
             sentiment[sentimentResult[0]] = sentimentResult[1]
 
-            return jsonify(attributes = attributes, sentiment = sentiment)
+
+            return jsonify(attributes = str(attributes), sentiment = str(sentiment))
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'
@@ -76,7 +76,7 @@ def analyzeIndex():
 def split_sentence_to_array(sentence):
     results = []
 
-    with open('attributes.json') as f:
+    with open('attributes.json', encoding="utf-8") as f:
         attributes = json.load(f)
 
         for key, values in attributes.items():
@@ -84,12 +84,12 @@ def split_sentence_to_array(sentence):
 
             for value in values:
                 if(value in sentence):
-                    # print(key + "/" + value)
+                    print(key + "/" + value)
                     temps.append(value)
             
             if(len(temps) != 0):
                 results.append({key: temps})
-
+    
     return results
 
 def get_sentiment(modelResult):
