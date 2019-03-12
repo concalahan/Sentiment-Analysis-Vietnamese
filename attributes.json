@@ -1,6 +1,6 @@
 {
     "ENTITY": [
-        "bất kì cái gì","máy","điện thoại","sản phẩm","giá","siêu phẩm","bảo hành","nhân viên",
+        "bất kì cái gì","máy","điện thoại","sản phẩm","sf","giá","siêu phẩm","bảo hành","nhân viên",
         "ốp","giá tiền","giá cả","mẫu mã","mấy","app","sp","dòng","đt","mã giảm giá","phiên bản"
     ],
     "THIETKE": [
@@ -39,7 +39,7 @@
         "góp k lãi","5 sao"
     ],
     "OS": [
-        "os","phần mềm ios","ios 12","mở phá khuôn mặt","hệ điều hành 8.0","bản cập nhật","android","iphone",
+        "os","phần mềm ios","ios","mở phá khuôn mặt","hệ điều hành","bản cập nhật","android",
         "jelly bean","kitkat","lollipop","marshmallow","nougat","oreo"
     ]
 }

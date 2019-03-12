@@ -65,10 +65,13 @@ def analyzeIndex():
 
             sentimentResult = get_sentiment(yhat_cnn)
 
-            sentiment = {}
-            sentiment[sentimentResult[0]] = sentimentResult[1]
+            sentiment = sentimentResult[0]
+            score = str(sentimentResult[1])
 
-            return jsonify(attributes = attributes, sentiment = sentiment)
+            print(attributes)
+            print(sentiment)
+
+            return jsonify(attributes = attributes, sentiment = sentiment, score = score)
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'
