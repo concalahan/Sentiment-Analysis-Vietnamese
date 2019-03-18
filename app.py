@@ -11,6 +11,7 @@ from keras import optimizers,regularizers
 from keras.models import Model,model_from_json
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
+import tensorflow as tf
 
 from flask import Flask
 from flask import request
@@ -45,48 +46,55 @@ def analyzeIndex():
         MAX_SEQUENCE_LENGTH=128
         loss= "categorical_crossentropy"
 
-        # load json and create model
-        json_file = open('model/model.json', 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
+        tf.global_variables_initializer()
 
-        # load weights into new model
-        loaded_model.load_weights("model/LSTMCNN_ALL_best_weights.hdf5")
-        print("Loaded model from disk")
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
 
-        # evaluate loaded model on test data
-        loaded_model.compile(optimizer=optimizer, loss=loss,metrics=['accuracy'])
+            # load json and create model
+            json_file = open('model/model.json', 'r')
+            loaded_model_json = json_file.read()
+            json_file.close()
+            loaded_model = model_from_json(loaded_model_json)
 
-        # loading
-        with open('model/tokenizer.pickle', 'rb') as handle:
-            tokenizer = pickle.load(handle)
-            data = []
+            # load weights into new model
+            loaded_model.load_weights("model/LSTMCNN_ALL_best_weights.hdf5")
+            print("Loaded model from disk")
 
-            for x in simpleAnalyzeOntology(q):
-                sequences_test = tokenizer.texts_to_sequences([x[2]])
-                x_test_seq = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
+            # evaluate loaded model on test data
+            loaded_model.compile(optimizer=optimizer, loss=loss,metrics=['accuracy'])
 
-                yhat_cnn = loaded_model.predict(x_test_seq)
+            # loading
+            with open('model/tokenizer.pickle', 'rb') as handle:
+                tokenizer = pickle.load(handle)
+                data = []
 
-                sentimentResult = get_sentiment(yhat_cnn)
+                for x in simpleAnalyzeOntology(q):
+                    sequences_test = tokenizer.texts_to_sequences([x[2]])
+                    x_test_seq = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
 
-                temp = {}
-                temp['attribute'] = x[0]
-                temp['keywords'] = x[1]
-                temp['sentence'] = x[2]
-                temp['sentiment'] = sentimentResult[0]
-                temp['score'] = str(sentimentResult[1])
+                    yhat_cnn = loaded_model.predict(x_test_seq)
 
-                data.append(temp)
+                    sentimentResult = get_sentiment(yhat_cnn)
 
-            return jsonify(data = data)
+                    temp = {}
+                    temp['attribute'] = x[0]
+                    temp['keywords'] = x[1]
+                    temp['sentence'] = x[2]
+                    temp['sentiment'] = sentimentResult[0]
+                    temp['score'] = str(sentimentResult[1])
+
+                    data.append(temp)
+
+                return jsonify(data = data)
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'
 
 @app.route('/get-article', methods=['GET', 'POST'])
 def getContentReviewSite():
+    K.clear_session()
+
     if(request.method == 'POST'):
         # Call object
         tinhte = Tinhte()
@@ -101,7 +109,7 @@ def getContentReviewSite():
         elif "vnreview" in url:
             content = vnreview.getArticle(url)
             
-        return content
+        return jsonify(data = content)
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'
