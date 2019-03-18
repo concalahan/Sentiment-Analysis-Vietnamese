@@ -19,6 +19,7 @@ from flask import jsonify
 from flask_cors import CORS
 
 from review_site import * 
+from utils import *
 
 app = Flask(__name__)
 CORS(app)
@@ -60,19 +61,26 @@ def analyzeIndex():
         # loading
         with open('model/tokenizer.pickle', 'rb') as handle:
             tokenizer = pickle.load(handle)
+            data = []
 
-            sequences_test = tokenizer.texts_to_sequences([q])
-            x_test_seq = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
+            for x in simpleAnalyzeOntology(q):
+                sequences_test = tokenizer.texts_to_sequences([x[2]])
+                x_test_seq = pad_sequences(sequences_test, maxlen=MAX_SEQUENCE_LENGTH)
 
-            yhat_cnn = loaded_model.predict(x_test_seq)
+                yhat_cnn = loaded_model.predict(x_test_seq)
 
-            sentimentResult = get_sentiment(yhat_cnn)
+                sentimentResult = get_sentiment(yhat_cnn)
 
-            sentiment = {}
-            sentiment[sentimentResult[0]] = sentimentResult[1]
+                temp = {}
+                temp['attribute'] = x[0]
+                temp['keywords'] = x[1]
+                temp['sentence'] = x[2]
+                temp['sentiment'] = sentimentResult[0]
+                temp['score'] = str(sentimentResult[1])
 
+                data.append(temp)
 
-            return jsonify(attributes = str(attributes), sentiment = str(sentiment))
+            return jsonify(data = data)
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'
@@ -109,7 +117,6 @@ def split_sentence_to_array(sentence):
 
             for value in values:
                 if(value in sentence):
-                    print(key + "/" + value)
                     temps.append(value)
             
             if(len(temps) != 0):
@@ -140,5 +147,77 @@ def get_sentiment(modelResult):
         return (sentiment, maxElement)
     else:
         # else make it as NEUTRAL
-        return ("NEUTRAL", 0.5)
+        # print("maxElement " + str(maxElement))
+        return ("neutral", 0.5)
     
+def separatingParagraph(paragraph):
+    entities = readJson('entities.json')
+    # extend all the entities in json file 
+    valuesList = list(item for valueList in entities.values() for item in valueList)
+    # Result is a list of each sentence separated by "." and ","
+    result = list()
+    # Split comment with character "."
+    splitComment = paragraph.split(".")
+    for comment in splitComment:
+        # countKey var to check if there are more than 2 values of entities or not
+        countKey = 0
+        for value in valuesList:
+            if value in comment:
+                countKey += 1
+                if countKey == 2: break
+        
+        # If there is only one entities in the comment then there is no need to separate the comment
+        if countKey == 1:
+            result += [comment]
+        # else if there is more than 2 entities then we should separate the comment with ","
+        elif countKey == 2:
+            result += [x for x in comment.split(",")]
+
+    return result
+
+def mergeEntity(comment):
+    result = set()
+    entities = readJson('entities.json')
+    
+    # Get all the sentence from the paragraph
+    sentenceList = separatingParagraph(comment)
+
+    for sentence in sentenceList:
+        # FlagExist for the case the we set only the sentence with one entity
+        # flagExist = False
+        for key in entities:
+            for value in entities[key]:
+                if value in sentence.lower():
+                    # print(key + " - " + value + " - " + sentence)
+                    result.add((key,sentence))
+                    # flagExist = True
+                    break
+            # if flagExist is True: break
+    
+    # Return a tuple: 
+    # first is key ("PIN", "MANHINH" , ...)
+    # second is the comment sentence
+
+    return result
+
+def mergeAttribute(mergeEntityResult):
+    result = list()
+    attributes = readJson('attributes.json')
+    
+    for x in mergeEntityResult:\
+        # x[0] is key ("PIN", "MANHINH" , ...)
+        entity = x[0]
+        attrList = list()
+        for attr in attributes[entity]:
+            if attr in x[1].lower():
+                attrList.append(attr)
+        if attrList != []:
+            result.append((entity,attrList,x[1]))
+                
+    return result
+
+def simpleAnalyzeOntology(paragraph):
+    mergeEntityResult = mergeEntity(paragraph)
+    result = mergeAttribute(mergeEntityResult)
+
+    return result
