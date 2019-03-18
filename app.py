@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+sys.path.append('./crawling-article/')
+
 import os
 import json
 import pickle
@@ -15,6 +17,8 @@ from flask import request
 from flask import abort, redirect, url_for
 from flask import jsonify
 from flask_cors import CORS
+
+from review_site import * 
 
 app = Flask(__name__)
 CORS(app)
@@ -69,6 +73,27 @@ def analyzeIndex():
 
 
             return jsonify(attributes = str(attributes), sentiment = str(sentiment))
+    else:
+        abort(400)
+        return 'ONLY ACCEPT POST REQUEST'
+
+@app.route('/get-article', methods=['GET', 'POST'])
+def getContentReviewSite():
+    if(request.method == 'POST'):
+        # Call object
+        tinhte = Tinhte()
+        vnreview = Vnreview()
+
+        # Get json 
+        url = request.get_json().get("q")
+        content = ""
+        
+        if "tinhte" in url:
+            content = tinhte.getArticle(url)
+        elif "vnreview" in url:
+            content = vnreview.getArticle(url)
+            
+        return content
     else:
         abort(400)
         return 'ONLY ACCEPT POST REQUEST'

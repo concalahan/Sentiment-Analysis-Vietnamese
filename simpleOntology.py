@@ -73,7 +73,7 @@ def simpleAnalyzeOntology(paragraph):
 
 if __name__ == "__main__":
     # simpleAnalyzeComment()
-    comment = "Máy dùng cũng rất oke. Con pin cực trâu, 50% pin lướt fb choi game liên tục tầm 5h. Hiệu năng cũng khá ổn, dù dùng con chip hơi thấp nhưng tối ưu tốt nên ít xảy ra giật lag, màn hình thì rất tốt luôn, mỗi tội cái camera cứ sao sao ấy. Chụp hình rất nhòe và ko sắc nét tí nào, ko biết là do máy mình lỗi hay j nhưng chụp 2 camera đều xấu, zoom lên thì chi tiết bị nhòe ko thấy j."
-    
+    comment = """Máy dùng cũng rất oke.Con pin cực trâu, 50% pin lướt fb choi game liên tục tầm 5h. Hiệu năng cũng khá ổn, dù dùng con chip hơi thấp nhưng tối ưu tốt nên ít xảy ra giật lag, màn hình thì rất tốt luôn, mỗi tội cái camera cứ sao sao ấy. Chụp hình rất nhòe và ko sắc nét tí nào, ko biết là do máy mình lỗi hay j nhưng chụp 2 camera đều xấu, zoom lên thì chi tiết bị nhòe ko thấy j."""
+    print(comment)
     for x in simpleAnalyzeOntology(comment):
         print(x)
