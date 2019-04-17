@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 import sys
 import codecs
+import io
 from tqdm import tqdm
 tqdm.pandas(desc="progress-bar")
+
 from gensim.models import Doc2Vec
 from gensim.models import KeyedVectors
+from gensim.models.wrappers import FastText
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import multiprocessing
 import pandas as pd
 import numpy as np
-# np.set_printoptions(threshold=np.inf)
 import tensorflow as tf
+
 from sklearn import utils
 from sklearn.preprocessing import scale
 from keras.layers import Embedding,Conv1D,CuDNNLSTM,Input,GlobalMaxPooling1D,MaxPooling1D,Activation,LSTM,Bidirectional,TimeDistributed,BatchNormalization
@@ -54,11 +58,20 @@ def get_w2v_ugdbowdmm(comment, size, model_ug_dbow, model_ug_dmm):
         vec /= count
     return vec
 
+def load_vectors(fname):
+    fin = io.open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
+    n, d = map(int, fin.readline().split())
+    data = {}
+    for line in fin:
+        tokens = line.rstrip().split(' ')
+        data[tokens[0]] = map(float, tokens[1:])
+    return data
+
 def main():
     cores = multiprocessing.cpu_count()
 
     cols = ['text','label']
-    my_df = pd.read_csv("./clean_comments_2.csv",header=0, names=cols, encoding='utf8').dropna()
+    my_df = pd.read_csv("./clean_comments.csv",header=0, names=cols, encoding='utf8').dropna()
 
     x = my_df['text']
     y = my_df['label']
@@ -68,7 +81,7 @@ def main():
     x_train, x_validation_and_test, y_train, y_validation_and_test = train_test_split(x, y, test_size=.02, random_state=SEED)
 
     y_train=tf.keras.utils.to_categorical(np.asarray(y_train), num_classes= 3)
-    y_validation_and_test=tf.keras.utils.to_categorical(np.asarray(y_validation_and_test))
+    y_validation_and_test=tf.keras.utils.to_categorical(np.asarray(y_validation_and_test), num_classes= 3)
 
     print("Loading the model...")
     model_ug_cbow = KeyedVectors.load('model/w2v_model_ug_cbow.word2vec')
@@ -80,15 +93,16 @@ def main():
     tokenizer = Tokenizer(num_words=20000, filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~1234567890',
                                    lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
     tokenizer.fit_on_texts(x_train)
+    print(len(tokenizer.word_index))
+    
 
     # saving tokenizer
     with open('tokenizer.pickle', 'wb') as handle:
         pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    print(x_train[:5])
-
     sequences = tokenizer.texts_to_sequences(x_train)
 
+    # append two 100 size dimensional vector into a 200 one
     embeddings_index = {}
     for w in model_ug_cbow.wv.vocab.keys():
         embeddings_index[w] = np.append(model_ug_cbow.wv[w],model_ug_sg.wv[w])
@@ -108,17 +122,16 @@ def main():
 
     Sumlength=0
     for x in sequences:
-        length.append(len(x))
         Sumlength=Sumlength+len(x)
 
     AvarageLength=round(Sumlength/len(x_train))
 
-    print("-----------------------")
-    print("REAL MAX_SEQUENCE_LENGTH {0}".format(max(length)))
-    print(Sumlength)
-    print(len(x_train))
-    print(AvarageLength)
-    print("-----------------------")
+    # print("-----------------------")
+    # print("REAL MAX_SEQUENCE_LENGTH {0}".format(max(length)))
+    # print(Sumlength)
+    # print(len(x_train))
+    # print(AvarageLength)
+    # print("-----------------------")
 
     # base on AvarageLength to define MAX_SEQUENCE_LENGTH
     MAX_SEQUENCE_LENGTH=64
@@ -170,15 +183,15 @@ def main():
     x = Bidirectional(LSTM(250, return_sequences=True))(x)
     x = Activation('relu')(x)
 
-    # Maxpool and Flaten Layers        
-    x = MaxPooling1D(5,strides=2)(x)
-    x = Flatten()(x)
-
     # Fully connected layers
     for fl in fully_connected_layers:
         x = Dense(fl)(x)
         x = Activation('relu')(x)
         x = Dropout(dropout_p)(x)
+
+    # Maxpool and Flaten Layers        
+    x = MaxPooling1D(5,strides=2)(x)
+    x = Flatten()(x)
 
     # Output layer
     predictions = Dense(num_of_classes, activation='softmax')(x)

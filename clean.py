@@ -4,7 +4,6 @@ import codecs
 import re
 import pandas as pd  
 import numpy as np
-import matplotlib.pyplot as plt
 from bs4 import BeautifulSoup
 from nltk.tokenize import WordPunctTokenizer
 tok = WordPunctTokenizer()
@@ -48,9 +47,6 @@ with open("./short_word.csv", mode='r', encoding='utf8') as input_file:
 
     for values in rows[1:]:
         short_words_dict_2[values[0].lower()] = values[1].lower()
-        # my_list.append({
-        #     values[0].lower(): values[1].lower()
-        # })
 
 short_words_pattern_2 = re.compile(r'\b(' + '|'.join(short_words_dict_2.keys()) + r')\b')
 
@@ -68,20 +64,16 @@ def main():
     # delete column header
     df.drop(0, inplace=True)
 
-    # print(df.head(10))
-
-    # fig, ax = plt.subplots(figsize=(5, 5))
-    # plt.boxplot(df.pre_clean_len)
-    # plt.show()
-
     clean_comment_texts = []
     for comment in df.comment:
-        clean_comment_texts.append(comment_cleaner(comment))
+        temp = comment_cleaner(comment)
+        if(temp != ""):
+            clean_comment_texts.append(temp)
     
     # add pre_clean_len column
     df['pre_clean_len'] = [len(t) for t in df.comment]
 
-    clean_df = pd.DataFrame(clean_comment_texts,columns=['text'])
+    clean_df = pd.DataFrame(clean_comment_texts, columns=['comment'])
     clean_df['label'] = df.label
     
     clean_df.to_csv('clean_comments.csv',encoding='utf-8')
