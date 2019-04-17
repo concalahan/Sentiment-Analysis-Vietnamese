@@ -90,6 +90,11 @@ def main():
     sequences = tokenizer.texts_to_sequences(x_train)
 
     embeddings_index = {}
+
+    print("----------------------------")
+    print(model_ug_cbow.wv.vocab.keys())
+    print("----------------------------")
+
     for w in model_ug_cbow.wv.vocab.keys():
         embeddings_index[w] = np.append(model_ug_cbow.wv[w],model_ug_sg.wv[w])
     print('Found %s word vectors.' % len(embeddings_index))
