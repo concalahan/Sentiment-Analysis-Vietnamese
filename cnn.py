@@ -87,6 +87,13 @@ def main():
     model_ug_cbow = KeyedVectors.load('model/w2v_model_ug_cbow.word2vec')
     model_ug_sg = KeyedVectors.load('model/w2v_model_ug_sg.word2vec')
     
+    # CBOW: w2v_model_ug_cbow.word2vec
+    # SKIP GRAM: w2v_model_ug_sg.word2vec
+
+    # DBOW Unigram: d2v_model_ug_dbow.doc2vec 0.7285714285714285
+    # DBOW Bigram: d2v_model_bg_dbow.doc2vec 0.7267857142857143
+    # DMM Bigram: d2v_model_bg_dmm.doc2vec 0.7232142857142857
+    
     print("Tokenizing the model...")
 
     # a number of vocabularies you want to use
@@ -94,7 +101,6 @@ def main():
                                    lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
     tokenizer.fit_on_texts(x_train)
     print(len(tokenizer.word_index))
-    
 
     # saving tokenizer
     with open('tokenizer.pickle', 'wb') as handle:
@@ -105,6 +111,11 @@ def main():
     # append two 100 size dimensional vector into a 200 one
     embeddings_index = {}
     for w in model_ug_cbow.wv.vocab.keys():
+        print(w)
+        print(model_ug_cbow.wv[w])
+        print(model_ug_sg.wv[w])
+        print('-----------------------------')
+
         embeddings_index[w] = np.append(model_ug_cbow.wv[w],model_ug_sg.wv[w])
     print('Found %s word vectors.' % len(embeddings_index))
 
@@ -214,7 +225,7 @@ def main():
         json_file.write(model_json)
 
     # serialize weights to HDF5
-    model.fit(x_train_seq, y_train, batch_size=16, epochs=1,
+    model.fit(x_train_seq, y_train, batch_size=16, epochs=5,
                         validation_data=(x_val_seq, y_validation_and_test), callbacks = [reduce_lr,checkpoint,earlystopper])
 
     # load json and create model
