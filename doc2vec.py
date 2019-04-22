@@ -67,13 +67,13 @@ def qdsub(s):
 def main():
     cores = multiprocessing.cpu_count()
 
-    cols = ['text','label']
+    cols = ['comment','label']
     my_df = pd.read_csv("./clean_comments.csv",header=None, names=cols, encoding='utf8')
     my_df.dropna(inplace=True)
     my_df.reset_index(drop=True,inplace=True)
     my_df.info()
 
-    x = my_df['text']
+    x = my_df['comment']
     y = my_df['label']
 
     SEED = 2000

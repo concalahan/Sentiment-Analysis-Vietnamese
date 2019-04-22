@@ -70,10 +70,10 @@ def load_vectors(fname):
 def main():
     cores = multiprocessing.cpu_count()
 
-    cols = ['text','label']
+    cols = ['comment','label']
     my_df = pd.read_csv("./clean_comments.csv",header=0, names=cols, encoding='utf8').dropna()
 
-    x = my_df['text']
+    x = my_df['comment']
     y = my_df['label']
 
     SEED = 2000
@@ -97,8 +97,7 @@ def main():
     print("Tokenizing the model...")
 
     # a number of vocabularies you want to use
-    tokenizer = Tokenizer(num_words=20000, filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~1234567890',
-                                   lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
+    tokenizer = Tokenizer(num_words=20000, lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
     tokenizer.fit_on_texts(x_train)
     print(len(tokenizer.word_index))
 
@@ -111,11 +110,6 @@ def main():
     # append two 100 size dimensional vector into a 200 one
     embeddings_index = {}
     for w in model_ug_cbow.wv.vocab.keys():
-        print(w)
-        print(model_ug_cbow.wv[w])
-        print(model_ug_sg.wv[w])
-        print('-----------------------------')
-
         embeddings_index[w] = np.append(model_ug_cbow.wv[w],model_ug_sg.wv[w])
     print('Found %s word vectors.' % len(embeddings_index))
 
@@ -169,8 +163,8 @@ def main():
             embedding_matrix[i] = embedding_vector
 
     # word at 2221 is 'core'
-    print("Checking the word at matrix 2192 is core")
-    print(np.array_equal(embedding_matrix[2192] ,embeddings_index.get('core')))
+    print("Checking the word at matrix 10, is shop")
+    print(np.array_equal(embedding_matrix[10,] ,embeddings_index.get('shop')))
 
     embedding_size=200
     fully_connected_layers= [1000,1000]
@@ -225,7 +219,7 @@ def main():
         json_file.write(model_json)
 
     # serialize weights to HDF5
-    model.fit(x_train_seq, y_train, batch_size=16, epochs=5,
+    model.fit(x_train_seq, y_train, batch_size=16, epochs=10,
                         validation_data=(x_val_seq, y_validation_and_test), callbacks = [reduce_lr,checkpoint,earlystopper])
 
     # load json and create model
@@ -253,3 +247,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# loss: 0.6226 - acc: 0.7723 - val_loss: 0.6620 - val_acc: 0.7533
+# Epoch 00010: val_acc did not improve from 0.75565
+# ----------final score----------
+# [0.6616767676103683, 0.7556547619047619]

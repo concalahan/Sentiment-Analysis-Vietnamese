@@ -65,9 +65,15 @@ def main():
     df.drop(0, inplace=True)
 
     clean_comment_texts = []
+
+    # for check duplicate
+    temp_comments = []
+
     for comment in df.comment:
         temp = comment_cleaner(comment)
-        if(temp != ""):
+
+        if(not temp.isspace() and temp not in temp_comments):
+            temp_comments.append(temp)
             clean_comment_texts.append(temp)
     
     # add pre_clean_len column
@@ -80,6 +86,17 @@ def main():
     csv = 'clean_comments.csv'
     my_df = pd.read_csv(csv,index_col=0)
     my_df.head()
+
+def delete_char(text):
+    # https://stackoverflow.com/questions/3411771/multiple-character-replace-with-python
+    # a) 1000000 loops, best of 3: 1.47 μs per loop
+
+    filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~\'' #1234567890
+    
+    for c in filters:
+        text = text.replace(c, r' ')
+    
+    return text
 
 def comment_cleaner(text):
     # HTML decoding
@@ -95,7 +112,10 @@ def comment_cleaner(text):
     stripped = re.sub(combined_pat, '', bom_removed)
     stripped = re.sub(www_pat, '', stripped)
 
-    lower_case = stripped.lower()
+    # .,!?
+    char_stripped = delete_char(stripped)
+
+    lower_case = char_stripped.lower()
 
     short_words_handled = short_words_pattern.sub(lambda x: short_words_dict[x.group()], lower_case)
 
