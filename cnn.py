@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 import sys
 import codecs
+import io
 from tqdm import tqdm
 tqdm.pandas(desc="progress-bar")
+
 from gensim.models import Doc2Vec
 from gensim.models import KeyedVectors
+from gensim.models.wrappers import FastText
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import multiprocessing
 import pandas as pd
 import numpy as np
-# np.set_printoptions(threshold=np.inf)
 import tensorflow as tf
+
 from sklearn import utils
 from sklearn.preprocessing import scale
 from keras.layers import Embedding,Conv1D,CuDNNLSTM,Input,GlobalMaxPooling1D,MaxPooling1D,Activation,LSTM,Bidirectional,TimeDistributed,BatchNormalization
@@ -54,13 +58,22 @@ def get_w2v_ugdbowdmm(comment, size, model_ug_dbow, model_ug_dmm):
         vec /= count
     return vec
 
+def load_vectors(fname):
+    fin = io.open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
+    n, d = map(int, fin.readline().split())
+    data = {}
+    for line in fin:
+        tokens = line.rstrip().split(' ')
+        data[tokens[0]] = map(float, tokens[1:])
+    return data
+
 def main():
     cores = multiprocessing.cpu_count()
 
-    cols = ['text','label']
-    my_df = pd.read_csv("./clean_comments_2.csv",header=0, names=cols, encoding='utf8').dropna()
+    cols = ['comment','label']
+    my_df = pd.read_csv("./clean_comments.csv",header=0, names=cols, encoding='utf8').dropna()
 
-    x = my_df['text']
+    x = my_df['comment']
     y = my_df['label']
 
     SEED = 2000
@@ -68,27 +81,33 @@ def main():
     x_train, x_validation_and_test, y_train, y_validation_and_test = train_test_split(x, y, test_size=.02, random_state=SEED)
 
     y_train=tf.keras.utils.to_categorical(np.asarray(y_train), num_classes= 3)
-    y_validation_and_test=tf.keras.utils.to_categorical(np.asarray(y_validation_and_test))
+    y_validation_and_test=tf.keras.utils.to_categorical(np.asarray(y_validation_and_test), num_classes= 3)
 
     print("Loading the model...")
     model_ug_cbow = KeyedVectors.load('model/w2v_model_ug_cbow.word2vec')
     model_ug_sg = KeyedVectors.load('model/w2v_model_ug_sg.word2vec')
     
+    # CBOW: w2v_model_ug_cbow.word2vec
+    # SKIP GRAM: w2v_model_ug_sg.word2vec
+
+    # DBOW Unigram: d2v_model_ug_dbow.doc2vec 0.7285714285714285
+    # DBOW Bigram: d2v_model_bg_dbow.doc2vec 0.7267857142857143
+    # DMM Bigram: d2v_model_bg_dmm.doc2vec 0.7232142857142857
+    
     print("Tokenizing the model...")
 
     # a number of vocabularies you want to use
-    tokenizer = Tokenizer(num_words=20000, filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~1234567890',
-                                   lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
+    tokenizer = Tokenizer(num_words=20000, lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
     tokenizer.fit_on_texts(x_train)
+    print(len(tokenizer.word_index))
 
     # saving tokenizer
     with open('tokenizer.pickle', 'wb') as handle:
         pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    print(x_train[:5])
-
     sequences = tokenizer.texts_to_sequences(x_train)
 
+    # append two 100 size dimensional vector into a 200 one
     embeddings_index = {}
 
     print("----------------------------")
@@ -113,17 +132,16 @@ def main():
 
     Sumlength=0
     for x in sequences:
-        length.append(len(x))
         Sumlength=Sumlength+len(x)
 
     AvarageLength=round(Sumlength/len(x_train))
 
-    print("-----------------------")
-    print("REAL MAX_SEQUENCE_LENGTH {0}".format(max(length)))
-    print(Sumlength)
-    print(len(x_train))
-    print(AvarageLength)
-    print("-----------------------")
+    # print("-----------------------")
+    # print("REAL MAX_SEQUENCE_LENGTH {0}".format(max(length)))
+    # print(Sumlength)
+    # print(len(x_train))
+    # print(AvarageLength)
+    # print("-----------------------")
 
     # base on AvarageLength to define MAX_SEQUENCE_LENGTH
     MAX_SEQUENCE_LENGTH=64
@@ -150,8 +168,8 @@ def main():
             embedding_matrix[i] = embedding_vector
 
     # word at 2221 is 'core'
-    print("Checking the word at matrix 2192 is core")
-    print(np.array_equal(embedding_matrix[2192] ,embeddings_index.get('core')))
+    print("Checking the word at matrix 10, is shop")
+    print(np.array_equal(embedding_matrix[10,] ,embeddings_index.get('shop')))
 
     embedding_size=200
     fully_connected_layers= [1000,1000]
@@ -206,7 +224,7 @@ def main():
         json_file.write(model_json)
 
     # serialize weights to HDF5
-    model.fit(x_train_seq, y_train, batch_size=16, epochs=1,
+    model.fit(x_train_seq, y_train, batch_size=16, epochs=10,
                         validation_data=(x_val_seq, y_validation_and_test), callbacks = [reduce_lr,checkpoint,earlystopper])
 
     # load json and create model
@@ -234,3 +252,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# loss: 0.6226 - acc: 0.7723 - val_loss: 0.6620 - val_acc: 0.7533
+# Epoch 00010: val_acc did not improve from 0.75565
+# ----------final score----------
+# [0.6616767676103683, 0.7556547619047619]
