@@ -192,16 +192,16 @@ def main():
     # LSTM Layer
     x = Bidirectional(LSTM(250, return_sequences=True))(x)
     x = Activation('relu')(x)
+	
+	# Maxpool and Flaten Layers        
+    x = MaxPooling1D(5,strides=2)(x)
+    x = Flatten()(x)
 
     # Fully connected layers
     for fl in fully_connected_layers:
         x = Dense(fl)(x)
         x = Activation('relu')(x)
         x = Dropout(dropout_p)(x)
-
-    # Maxpool and Flaten Layers        
-    x = MaxPooling1D(5,strides=2)(x)
-    x = Flatten()(x)
 
     # Output layer
     predictions = Dense(num_of_classes, activation='softmax')(x)
