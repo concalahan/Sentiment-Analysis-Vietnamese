@@ -95,9 +95,10 @@ def main():
     # DMM Bigram: d2v_model_bg_dmm.doc2vec 0.7232142857142857
     
     print("Tokenizing the model...")
+    num_words = 20000
 
     # a number of vocabularies you want to use
-    tokenizer = Tokenizer(num_words=20000, lower=True, split=' ', char_level=False, oov_token=None, document_count=0)
+    tokenizer = Tokenizer(num_words=num_words, lower=True, split=' ')
     tokenizer.fit_on_texts(x_train)
     print(len(tokenizer.word_index))
 
@@ -158,7 +159,6 @@ def main():
     x_val_seq = pad_sequences(sequences_val, maxlen=MAX_SEQUENCE_LENGTH)
 
     # only care about 20000 most frequent words in the training set
-    num_words = 20000
     embedding_matrix = np.zeros((num_words, 200))
     for word, i in tokenizer.word_index.items():
         if i >= num_words:

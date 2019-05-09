@@ -106,28 +106,28 @@ def main():
     # --------------------- Skip gram word2vec ---------------------
     # --------------------------------------------------------------
 
-    # model_ug_sg = Word2Vec(sg=1, size=100, negative=5, window=2, min_count=2, workers=cores, alpha=0.065, min_alpha=0.065)
-    # model_ug_sg.build_vocab([x.words for x in tqdm(all_x_w2v)])
+    model_ug_sg = Word2Vec(sg=1, size=100, negative=5, window=2, min_count=2, workers=cores, alpha=0.065, min_alpha=0.065)
+    model_ug_sg.build_vocab([x.words for x in tqdm(all_x_w2v)])
 
-    # for epoch in range(30):
-    #     model_ug_sg.train(utils.shuffle([x.words for x in tqdm(all_x_w2v)]), total_examples=len(all_x_w2v), epochs=1)
-    #     model_ug_sg.alpha -= 0.002
-    #     model_ug_sg.min_alpha = model_ug_sg.alpha
+    for epoch in range(30):
+        model_ug_sg.train(utils.shuffle([x.words for x in tqdm(all_x_w2v)]), total_examples=len(all_x_w2v), epochs=1)
+        model_ug_sg.alpha -= 0.002
+        model_ug_sg.min_alpha = model_ug_sg.alpha
 
-    # model_ug_sg.save('model/w2v_model_ug_sg.word2vec')
+    model_ug_sg.save('model/w2v_model_ug_sg.word2vec')
 
     # --------------------- CBOW word2vec ---------------------
     # ---------------------------------------------------------
 
-    model_ug_cbow = Word2Vec(sg=0, size=100, negative=5, window=2, min_count=2, workers=cores, alpha=0.065, min_alpha=0.065)
-    model_ug_cbow.build_vocab([x.words for x in tqdm(all_x_w2v)])
+    # model_ug_cbow = Word2Vec(sg=0, size=100, negative=5, window=2, min_count=2, workers=cores, alpha=0.065, min_alpha=0.065)
+    # model_ug_cbow.build_vocab([x.words for x in tqdm(all_x_w2v)])
 
-    for epoch in range(30):
-        model_ug_cbow.train(utils.shuffle([x.words for x in tqdm(all_x_w2v)]), total_examples=len(all_x_w2v), epochs=1)
-        model_ug_cbow.alpha -= 0.002
-        model_ug_cbow.min_alpha = model_ug_cbow.alpha
+    # for epoch in range(30):
+    #     model_ug_cbow.train(utils.shuffle([x.words for x in tqdm(all_x_w2v)]), total_examples=len(all_x_w2v), epochs=1)
+    #     model_ug_cbow.alpha -= 0.002
+    #     model_ug_cbow.min_alpha = model_ug_cbow.alpha
 
-    model_ug_cbow.save('model/w2v_model_ug_cbow.word2vec')
+    # model_ug_cbow.save('model/w2v_model_ug_cbow.word2vec')
 
     # --------------------- DBOW doc2vec ---------------------
     # --------------------------------------------------------

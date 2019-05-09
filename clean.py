@@ -19,25 +19,6 @@ pat2 = r'https?://[^ ]+'
 combined_pat = r'|'.join((pat1, pat2))
 www_pat = r'www.[^ ]+'
 
-short_words_dict = {
-    "ko":"không",
-    "k":"không",
-    "1":"một",
-    "2":"hai",
-    "3":"ba",
-    "4":"bốn",
-    "5":"năm",
-    "6":"sáu",
-    "7":"bảy",
-    "8":"tám",
-    "9":"chín",
-    "10":"mười",
-    "đc":"được",
-    "dc":"được"
-}
-
-short_words_pattern = re.compile(r'\b(' + '|'.join(short_words_dict.keys()) + r')\b')
-
 short_words_dict_2 = {}
 
 with open("./short_word.csv", mode='r', encoding='utf8') as input_file:
@@ -117,11 +98,9 @@ def comment_cleaner(text):
 
     lower_case = char_stripped.lower()
 
-    short_words_handled = short_words_pattern.sub(lambda x: short_words_dict[x.group()], lower_case)
+    short_words_handled = short_words_pattern_2.sub(lambda x: short_words_dict_2[x.group()], lower_case)
 
-    short_words_handled_2 = short_words_pattern_2.sub(lambda x: short_words_dict_2[x.group()], short_words_handled)
-
-    emoji_handled = emoji_pattern.sub(r'', short_words_handled_2)
+    emoji_handled = emoji_pattern.sub(r'', short_words_handled)
 
     return emoji_handled
 
