@@ -192,8 +192,8 @@ def main():
     # LSTM Layer
     x = Bidirectional(LSTM(250, return_sequences=True))(x)
     x = Activation('relu')(x)
-	
-	# Maxpool and Flaten Layers        
+
+    # Maxpool and Flaten Layers
     x = MaxPooling1D(5,strides=2)(x)
     x = Flatten()(x)
 
@@ -224,7 +224,7 @@ def main():
         json_file.write(model_json)
 
     # serialize weights to HDF5
-    model.fit(x_train_seq, y_train, batch_size=16, epochs=10,
+    model.fit(x_train_seq, y_train, batch_size=16, epochs=12,
                         validation_data=(x_val_seq, y_validation_and_test), callbacks = [reduce_lr,checkpoint,earlystopper])
 
     # load json and create model
